@@ -9,9 +9,15 @@ import {
 import * as path from 'path';
 import { WindowUtil } from './util/windowUtils';
 import { Terminal, window } from 'vscode';
-import { DRONE_CLI_COMMAND, getToolLocationFromConfig } from './util/settings';
+import {
+  DRONE_CLI_COMMAND,
+  getToolLocationFromConfig,
+  isRunOnGitCommit,
+  isRunTrusted,
+} from './util/settings';
 import * as yaml from 'js-yaml';
 import * as fsex from 'fs-extra';
+import { GitHookUtil } from './util/gitHookUtils';
 
 export interface DroneCli {
   exec(): Promise<void>;
@@ -26,33 +32,43 @@ export interface DroneCli {
     cwd?: string,
     fail?: boolean
   ): Promise<CliExitData>;
+  handleConfigChange(): Promise<void>;
 }
 
-export function create(): DroneCli {
-  return new DroneCliImpl();
+interface DroneContext {
+  readonly droneFile: vscode.Uri;
+  readonly droneWorkspaceFolder: vscode.WorkspaceFolder;
+  readonly gitHookUtil: GitHookUtil;
+}
+
+export async function create(): Promise<DroneCli> {
+  const droneContext: DroneContext = await initDroneContext();
+  return new DroneCliImpl(droneContext);
 }
 
 class DroneCliImpl implements DroneCli {
-  async exec(): Promise<void> {
-    let droneFile: string;
-    let workspaceFolder: vscode.WorkspaceFolder;
-    let droneFileUri: vscode.Uri;
-    const cmdArgs: string[] = new Array<string>('exec');
-    const droneFiles = await vscode.workspace.findFiles(
-      '**/.drone.yml',
-      '**/.drone.yaml'
-    );
-    if (droneFiles?.length == 1) {
-      droneFileUri = droneFiles[0];
-      droneFile = vscode.workspace.asRelativePath(droneFileUri);
-    } else if (droneFiles?.length > 1) {
-      //TODO show quick pick allowing user to choose the pipeline file
+  constructor(private readonly context: DroneContext) {
+    this.context = context;
+  }
+
+  async handleConfigChange(): Promise<void> {
+    if (isRunOnGitCommit()) {
+      await this.context.gitHookUtil.addPostCommitHook();
+    } else {
+      await this.context.gitHookUtil.removePostCommitHook();
     }
+  }
+
+  async exec(): Promise<void> {
+    const cmdArgs: string[] = new Array<string>('exec');
+    const droneFile = vscode.workspace.asRelativePath(this.context.droneFile);
 
     if (droneFile) {
-      workspaceFolder = vscode.workspace.getWorkspaceFolder(droneFileUri);
-      const cwd = workspaceFolder.uri.fsPath;
+      const cwd = this.context.droneWorkspaceFolder.uri.fsPath;
       cmdArgs.push(droneFile);
+      if (isRunTrusted()) {
+        cmdArgs.push('--trusted');
+      }
       const pipelineName = await this.getPipelineName(
         path.join(cwd, droneFile)
       );
@@ -136,4 +152,29 @@ class DroneCliImpl implements DroneCli {
     terminal.sendText(cliCommandToString(command), true);
     terminal.show();
   }
+}
+
+async function initDroneContext(): Promise<DroneContext> {
+  let droneWorkspaceFolder: vscode.WorkspaceFolder;
+  let droneFileUri: vscode.Uri;
+  const droneFiles = await vscode.workspace.findFiles(
+    '**/.drone.yml',
+    '**/.drone.yaml'
+  );
+
+  if (droneFiles?.length == 1) {
+    droneFileUri = droneFiles[0];
+  } else if (droneFiles?.length > 1) {
+    //TODO show quick pick allowing user to choose the pipeline file
+  }
+
+  droneWorkspaceFolder = vscode.workspace.getWorkspaceFolder(droneFileUri);
+
+  const gitHookUtil = await GitHookUtil(droneWorkspaceFolder);
+
+  return {
+    droneFile: droneFileUri,
+    droneWorkspaceFolder,
+    gitHookUtil,
+  };
 }

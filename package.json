@@ -11,10 +11,7 @@
     "Snippets"
   ],
   "activationEvents": [
-    "onCommand:vscode-drone.about",
-    "onCommand:vscode-drone.run",
-    "workspaceContains:**/.drone.yml",
-    "onLanguage:yaml"
+    "workspaceContains:**/.drone.yml"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -43,58 +40,67 @@
           "type": "boolean",
           "scope": "machine",
           "default": true,
-          "description": "Notify on startup if update is available for drone cli"
+          "description": "Notify on startup if update is available for drone cli",
+          "order": 0
         },
         "vscode-drone.runOnGitCommit": {
           "Title": "Run on git commit",
           "type": "boolean",
           "default": false,
-          "markdownDescription": "Run `drone exec` on every commit of the code"
+          "markdownDescription": "Run `drone exec` on every commit of the code",
+          "order": 1
         },
         "vscode-drone.runTrusted": {
           "Title": "Run drone in trusted mode",
           "type": "boolean",
           "default": false,
-          "markdownDescription": "Run `drone exec --trusted ` mode, allowing to mount host paths."
+          "markdownDescription": "Run `drone exec --trusted ` mode, allowing to mount host paths.",
+          "order": 2
         },
         "vscode-drone.execEnvironment": {
           "Title": "Execution Environment Variables",
           "type": "object",
           "default": {},
-          "markdownDescription": "The environment variables that will be passed to `drone exec` as `--env-file` option. The values are passed as key pairs e.g. \"FOO\": \"BAR\""
+          "markdownDescription": "The environment variables that will be passed to `drone exec` as `--env-file` option. The values are passed as key pairs e.g. \"FOO\": \"BAR\"",
+          "order": 3
         },
         "vscode-drone.showChannelOutput": {
           "title": "Show channel on output",
           "type": "boolean",
           "default": false,
-          "description": "Show Drone output channel when new text added to output stream"
+          "description": "Show Drone output channel when new text added to output stream",
+          "order": 4
         },
         "vscode-drone.drone.cli.path": {
           "type": "string",
           "title": "Path to drone cli",
           "default": "",
-          "description": "File path to a drone cli binary. (You can override this on a per-OS basis if required)."
+          "description": "File path to a drone cli binary. (You can override this on a per-OS basis if required).",
+          "order": 4
         },
         "vscode-drone.drone.cli.path.mac": {
           "type": "string",
           "scope": "machine",
           "default": "",
           "title": "Path to drone cli(macOS)",
-          "description": "File path to a drone cli binary."
+          "description": "File path to a drone cli binary.",
+          "order": 5
         },
         "vscode-drone.drone.cli.path.windows": {
           "type": "string",
           "scope": "machine",
           "default": "",
           "title": "Path to drone cli(Windows)",
-          "description": "File path to a drone cli binary."
+          "description": "File path to a drone cli binary.",
+          "order": 6
         },
         "vscode-drone.drone.cli.path.linux": {
           "type": "string",
           "scope": "machine",
           "default": "",
           "title": "Path to drone cli(Linux)",
-          "description": "File path to a drone cli binary."
+          "description": "File path to a drone cli binary.",
+          "order": 7
         }
       }
     },
@@ -106,7 +112,8 @@
     ]
   },
   "extensionDependencies": [
-    "redhat.vscode-yaml"
+    "redhat.vscode-yaml",
+    "vscode.git"
   ],
   "scripts": {
     "vscode:prepublish": "npm run package",
