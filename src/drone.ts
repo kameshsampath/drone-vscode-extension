@@ -1,17 +1,17 @@
-import * as vscode from "vscode";
+import * as vscode from 'vscode';
 import {
   cli,
   CliCommand,
   cliCommandToString,
   CliExitData,
   createCliCommand,
-} from "./cli";
-import * as path from "path";
-import { WindowUtil } from "./util/windowUtils";
-import { Terminal, window } from "vscode";
-import { DRONE_COMMAND, getToolLocationFromConfig } from "./util/settings";
-import * as yaml from "js-yaml";
-import * as fsex from "fs-extra";
+} from './cli';
+import * as path from 'path';
+import { WindowUtil } from './util/windowUtils';
+import { Terminal, window } from 'vscode';
+import { DRONE_CLI_COMMAND, getToolLocationFromConfig } from './util/settings';
+import * as yaml from 'js-yaml';
+import * as fsex from 'fs-extra';
 
 export interface DroneCli {
   exec(): Promise<void>;
@@ -37,10 +37,10 @@ class DroneCliImpl implements DroneCli {
     let droneFile: string;
     let workspaceFolder: vscode.WorkspaceFolder;
     let droneFileUri: vscode.Uri;
-    const cmdArgs: string[] = new Array<string>("exec");
+    const cmdArgs: string[] = new Array<string>('exec');
     const droneFiles = await vscode.workspace.findFiles(
-      "**/.drone.yml",
-      "**/.drone.yaml"
+      '**/.drone.yml',
+      '**/.drone.yaml'
     );
     if (droneFiles?.length == 1) {
       droneFileUri = droneFiles[0];
@@ -58,7 +58,7 @@ class DroneCliImpl implements DroneCli {
       );
 
       //TODO run in terminal and other options ..
-      const command = createCliCommand(DRONE_COMMAND, ...cmdArgs);
+      const command = createCliCommand(DRONE_CLI_COMMAND, ...cmdArgs);
       await this.executeInTerminal(
         command,
         pipelineName,
@@ -75,11 +75,11 @@ class DroneCliImpl implements DroneCli {
   async getPipelineName(droneFilePath: string): Promise<string | undefined> {
     const strYaml = await fsex.readFile(droneFilePath);
     const pipelineDoc = yaml.load(strYaml.toString());
-    return pipelineDoc["name"];
+    return pipelineDoc['name'];
   }
 
   async about(): Promise<void> {
-    const cmd = createCliCommand("drone", "--version");
+    const cmd = createCliCommand('drone', '--version');
     const result = await this.execute(cmd);
     if (result.error) {
       window.showErrorMessage(`Error ${result.error} `);
@@ -97,8 +97,8 @@ class DroneCliImpl implements DroneCli {
     if (toolLocation) {
       // eslint-disable-next-line require-atomic-updates
       command.cliCommand = command.cliCommand
-        .replace("drone", `"${toolLocation}"`)
-        .replace(new RegExp("&& drone", "g"), `&& "${toolLocation}"`);
+        .replace('drone', `"${toolLocation}"`)
+        .replace(new RegExp('&& drone', 'g'), `&& "${toolLocation}"`);
     }
 
     return cli
@@ -109,7 +109,7 @@ class DroneCliImpl implements DroneCli {
       .catch((err) =>
         fail
           ? Promise.reject(err)
-          : Promise.resolve({ error: null, stdout: "", stderr: "" })
+          : Promise.resolve({ error: null, stdout: '', stderr: '' })
       );
   }
 
@@ -117,7 +117,7 @@ class DroneCliImpl implements DroneCli {
     command: CliCommand,
     resourceName?: string,
     cwd: string = process.cwd(),
-    name = "Drone"
+    name = 'Drone'
   ): Promise<void> {
     let toolLocation = getToolLocationFromConfig();
     if (toolLocation) {

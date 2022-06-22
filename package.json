@@ -4,7 +4,7 @@
   "description": "VsCode plugin for Drone",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.62.0"
+    "vscode": "^1.68.0"
   },
   "categories": [
     "Other",
@@ -71,7 +71,6 @@
         },
         "vscode-drone.drone.cli.path": {
           "type": "string",
-          "scope": "machine",
           "title": "Path to drone cli",
           "default": "",
           "description": "File path to a drone cli binary. (You can override this on a per-OS basis if required)."
