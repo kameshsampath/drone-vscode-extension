@@ -1,51 +1,165 @@
 {
   "name": "vscode-drone",
-	"displayName": "vscode-drone",
-	"description": "VsCode plugin for Drone",
-	"version": "0.0.1",
-	"engines": {
-		"vscode": "^1.68.0"
-	},
-	"categories": [
-		"Other"
-	],
-	"activationEvents": [
-        "onCommand:vscode-drone.helloWorld"
-	],
-	"main": "./dist/extension.js",
-	"contributes": {
-		"commands": [
-			{
-				"command": "vscode-drone.helloWorld",
-				"title": "Hello World"
-			}
-		]
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run package",
-		"compile": "webpack",
-		"watch": "webpack --watch",
-		"package": "webpack --mode production --devtool hidden-source-map",
-		"compile-tests": "tsc -p . --outDir out",
-		"watch-tests": "tsc -p . -w --outDir out",
-		"pretest": "npm run compile-tests && npm run compile && npm run lint",
-		"lint": "eslint src --ext ts",
-		"test": "node ./out/test/runTest.js"
-	},
-	"devDependencies": {
-		"@types/vscode": "^1.68.0",
-		"@types/glob": "^7.2.0",
-		"@types/mocha": "^9.1.1",
-		"@types/node": "16.x",
-		"@typescript-eslint/eslint-plugin": "^5.27.0",
-		"@typescript-eslint/parser": "^5.27.0",
-		"eslint": "^8.16.0",
-		"glob": "^8.0.3",
-		"mocha": "^10.0.0",
-		"typescript": "^4.7.2",
-		"ts-loader": "^9.3.0",
-		"webpack": "^5.72.1",
-		"webpack-cli": "^4.9.2",
-		"@vscode/test-electron": "^2.1.3"
-	}
+  "displayName": "vscode-drone",
+  "description": "VsCode plugin for Drone",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.62.0"
+  },
+  "categories": [
+    "Other",
+    "Snippets"
+  ],
+  "activationEvents": [
+    "onCommand:vscode-drone.about",
+    "onCommand:vscode-drone.run",
+    "workspaceContains:**/.drone.yml",
+    "onLanguage:yaml"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vscode-drone.about",
+        "title": "About Drone",
+        "category": "Drone",
+        "icon": {
+          "dark": "images/dark/versions.svg",
+          "light": "images/light/versions.svg"
+        }
+      },
+      {
+        "command": "vscode-drone.run",
+        "title": "Exec",
+        "category": "Drone"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Drone",
+      "properties": {
+        "vscode-drone.drone.checkUpgrade": {
+          "title": "Check for drone cli upgrade",
+          "type": "boolean",
+          "scope": "machine",
+          "default": true,
+          "description": "Notify on startup if update is available for drone cli"
+        },
+        "vscode-drone.runOnGitCommit": {
+          "Title": "Run on git commit",
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Run `drone exec` on every commit of the code"
+        },
+        "vscode-drone.runTrusted": {
+          "Title": "Run drone in trusted mode",
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Run `drone exec --trusted ` mode, allowing to mount host paths."
+        },
+        "vscode-drone.execEnvironment": {
+          "Title": "Execution Environment Variables",
+          "type": "object",
+          "default": {},
+          "markdownDescription": "The environment variables that will be passed to `drone exec` as `--env-file` option. The values are passed as key pairs e.g. \"FOO\": \"BAR\""
+        },
+        "vscode-drone.showChannelOutput": {
+          "title": "Show channel on output",
+          "type": "boolean",
+          "default": false,
+          "description": "Show Drone output channel when new text added to output stream"
+        },
+        "vscode-drone.drone.cli.path": {
+          "type": "string",
+          "scope": "machine",
+          "title": "Path to drone cli",
+          "default": "",
+          "description": "File path to a drone cli binary. (You can override this on a per-OS basis if required)."
+        },
+        "vscode-drone.drone.cli.path.mac": {
+          "type": "string",
+          "scope": "machine",
+          "default": "",
+          "title": "Path to drone cli(macOS)",
+          "description": "File path to a drone cli binary."
+        },
+        "vscode-drone.drone.cli.path.windows": {
+          "type": "string",
+          "scope": "machine",
+          "default": "",
+          "title": "Path to drone cli(Windows)",
+          "description": "File path to a drone cli binary."
+        },
+        "vscode-drone.drone.cli.path.linux": {
+          "type": "string",
+          "scope": "machine",
+          "default": "",
+          "title": "Path to drone cli(Linux)",
+          "description": "File path to a drone cli binary."
+        }
+      }
+    },
+    "snippets": [
+      {
+        "language": "yaml",
+        "path": "./snippets/drone.json"
+      }
+    ]
+  },
+  "extensionDependencies": [
+    "redhat.vscode-yaml"
+  ],
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.14.0",
+    "@types/fs-extra": "^9.0.13",
+    "@types/glob": "^7.2.0",
+    "@types/mocha": "^9.1.1",
+    "@types/moment": "^2.13.0",
+    "@types/node": "16.x",
+    "@types/semver": "^7.3.10",
+    "@types/shelljs": "^0.8.11",
+    "@types/vscode": "^1.68.0",
+    "@typescript-eslint/eslint-plugin": "^5.29.0",
+    "@typescript-eslint/parser": "^5.29.0",
+    "@vscode/test-electron": "^2.1.3",
+    "eslint": "^8.18.0",
+    "eslint-plugin-header": "^3.1.1",
+    "glob": "^8.0.3",
+    "mocha": "^10.0.0",
+    "rimraf": "^3.0.2",
+    "ts-loader": "^9.3.0",
+    "typescript": "^4.7.4",
+    "webpack": "^5.72.1",
+    "webpack-cli": "^4.9.2"
+  },
+  "dependencies": {
+    "@types/js-yaml": "^4.0.5",
+    "@types/targz": "^1.0.1",
+    "@types/unzip-stream": "^0.3.1",
+    "axios": "^0.27.2",
+    "fs-extra": "^10.1.0",
+    "hasha": "^5.2.2",
+    "install": "^0.13.0",
+    "js-yaml": "^4.1.0",
+    "jstream": "^1.1.1",
+    "moment": "^2.29.3",
+    "octokit": "^1.8.0",
+    "request": "^2.88.2",
+    "request-progress": "^3.0.0",
+    "semver": "^7.3.7",
+    "shelljs": "^0.8.5",
+    "targz": "^1.0.1",
+    "unzip-stream": "^0.3.1"
+  }
 }

@@ -1,26 +1,51 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
+/*-----------------------------------------------------------------------------------------------
+ *  Copyright (c) Harness, Inc. All rights reserved.
+ *  Licensed under the MIT License. See LICENSE file in the project root for license information.
+ *-----------------------------------------------------------------------------------------------*/
 import * as vscode from 'vscode';
+import { create as DroneCli } from './drone';
+import { installOrUpgradeDroneCli } from './util/installDroneCli';
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
-	
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "vscode-drone" is now active!');
+export let contextGlobalState: vscode.ExtensionContext;
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('vscode-drone.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from vscode-drone!');
-	});
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  contextGlobalState = context;
 
-	context.subscriptions.push(disposable);
+  await installOrUpgradeDroneCli(null);
+  
+  const droneCli = DroneCli();
+  
+  const disposables = [
+    vscode.commands.registerCommand('vscode-drone.about',(context) => droneCli.about()),
+
+    vscode.commands.registerCommand('vscode-drone.run', (context) => droneCli.exec() ),
+  ];
+
+  disposables.forEach((e) => context.subscriptions.push(e));
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() {}
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+export function deactivate(): void {}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function execute<T>(command: (...args: T[]) => Promise<any> | void, ...params: T[]): any | undefined {
+  try {
+    const res = command.call(null, ...params);
+    return res && res.then
+      ? res.then((result: string) => {
+        displayResult(result);
+      }).catch((err: Error) => {
+        vscode.window.showErrorMessage(err.message ? err.message : err.toString());
+      })
+      : undefined;
+  } catch (err: any) {
+    vscode.window.showErrorMessage(err);
+  }
+}
+
+function displayResult(result?: string): void {
+  if (result && typeof result === 'string') {
+    vscode.window.showInformationMessage(result);
+  }
+}
