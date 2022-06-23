@@ -47,6 +47,7 @@
           "Title": "Run on git commit",
           "type": "boolean",
           "default": false,
+          "scope": "machine-overridable",
           "markdownDescription": "Run `drone exec` on every commit of the code",
           "order": 1
         },
@@ -54,6 +55,7 @@
           "Title": "Run drone in trusted mode",
           "type": "boolean",
           "default": false,
+          "scope": "machine-overridable",
           "markdownDescription": "Run `drone exec --trusted ` mode, allowing to mount host paths.",
           "order": 2
         },
@@ -117,13 +119,14 @@
   ],
   "scripts": {
     "vscode:prepublish": "npm run package",
-    "compile": "webpack",
-    "watch": "webpack --watch",
+    "compile": "tsc -p ./",
+    "clean": "rimraf out",
     "package": "webpack --mode production --devtool hidden-source-map",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "npm run compile-tests && npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
+    "pretest": "npm run clean && npm run compile-tests && npm run compile",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
@@ -151,6 +154,7 @@
   },
   "dependencies": {
     "@types/js-yaml": "^4.0.5",
+    "@types/mustache": "^4.1.3",
     "@types/targz": "^1.0.1",
     "@types/unzip-stream": "^0.3.1",
     "axios": "^0.27.2",
@@ -159,7 +163,9 @@
     "install": "^0.13.0",
     "js-yaml": "^4.1.0",
     "jstream": "^1.1.1",
+    "lodash": "^4.17.21",
     "moment": "^2.29.3",
+    "mustache": "^4.2.0",
     "octokit": "^1.8.0",
     "request": "^2.88.2",
     "request-progress": "^3.0.0",

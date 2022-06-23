@@ -1,10 +1,12 @@
+/* eslint-disable header/header */
+
 //https://github.com/redhat-developers/vscode-tekton
 
 /*-----------------------------------------------------------------------------------------------
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See LICENSE file in the project root for license information.
  *-----------------------------------------------------------------------------------------------*/
-// eslint-disable-next-line header/header
+
 import * as fs from 'fs';
 import * as zlib from 'zlib';
 import * as targz from 'targz';

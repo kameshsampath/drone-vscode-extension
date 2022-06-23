@@ -51,7 +51,7 @@ async function downloadAndInstallTool(
   const arch = Platform.ARCH;
   let toolExists = false;
   let versionInfo: ToolVersionInfo;
-  let toolLocation: string = '';
+  let toolLocation = '';
   for (const location of locations) {
     if (await fsex.pathExists(location)) {
       toolExists = true;
@@ -100,7 +100,7 @@ async function downloadAndInstallTool(
   }
 }
 
-async function installTool(url: string, version: string) {
+async function installTool(url: string, version: string): Promise<void> {
   const toolLocation = getToolLocation();
   const toolArchiveFile = path.join(getInstallFolder(), 'drone-cli.tar.gz');
   await fsex.ensureDir(getInstallFolder());

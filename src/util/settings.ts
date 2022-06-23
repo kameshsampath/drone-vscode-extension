@@ -50,6 +50,7 @@ async function addValueToConfigAtScope(
   await vscode.workspace.getConfiguration().update(configKey, value, scope);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function addValueToConfigArray(
   configKey: string,
   value: string
@@ -153,10 +154,7 @@ function osKeyString(os: string): string | null {
 }
 
 //Drone settings
-export function getToolLocationFromConfig(
-  os?: string,
-  tool: string = 'drone'
-): string {
+export function getToolLocationFromConfig(os?: string, tool = 'drone'): string {
   //check if the setting has been overridden at OS level
   let toolLocation: string = vscode.workspace
     .getConfiguration()

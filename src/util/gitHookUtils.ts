@@ -1,17 +1,37 @@
+/*-----------------------------------------------------------------------------------------------
+ *  Copyright (c) Harness, Inc. All rights reserved.
+ *  Licensed under the MIT License. See LICENSE file in the project root for license information.
+ *-----------------------------------------------------------------------------------------------*/
+
 import * as vscode from 'vscode';
 import { GitExtension, Repository } from '../types/git';
+import { isRunTrusted } from './settings';
+import * as fsex from 'fs-extra';
+import * as path from 'path';
+import * as Mustache from 'mustache';
 
 export interface GitHookUtil {
   addPostCommitHook(): Promise<void>;
+  updatePostCommitHook(): Promise<void>;
   removePostCommitHook(): Promise<void>;
 }
 
 interface GitContext {
+  readonly droneFile: string;
   readonly gitRootFolder: vscode.WorkspaceFolder;
   readonly gitRepository: Repository;
 }
 
+const POST_COMMIT_TEMPLATE = `
+#!/bin/bash
+
+set -e
+
+drone exec  {{#trusted}} --trusted {{/trusted}} {{droneFile}}
+`;
+
 export async function GitHookUtil(
+  droneFile: string,
   gitRootFolder: vscode.WorkspaceFolder
 ): Promise<GitHookUtil> {
   const gitExtension =
@@ -35,7 +55,7 @@ export async function GitHookUtil(
           title: `Initializing git repository at "${gitRootFolder.uri.fsPath},"`,
           cancellable: false,
         },
-        async (progress, token) => {
+        async (progress) => {
           await git.init(gitRootFolder.uri);
           progress.report({ increment: 100 });
           return;
@@ -46,22 +66,44 @@ export async function GitHookUtil(
 
   const gitContext: GitContext = {
     gitRootFolder,
+    droneFile,
     gitRepository: gitRepo,
   };
   return new GitHookUtilImpl(gitContext);
 }
 
 class GitHookUtilImpl implements GitHookUtil {
+  private readonly postCommitHookFile: string;
   constructor(private readonly context: GitContext) {
     this.context = context;
+    this.postCommitHookFile = path.join(
+      this.context.gitRepository.rootUri.fsPath,
+      '.git',
+      'hooks',
+      'post-commit'
+    );
   }
 
   async addPostCommitHook(): Promise<void> {
-    const gitRepoRoot = this.context.gitRepository.rootUri;
-    console.log(`Add Post Commit Hook ${gitRepoRoot.path}`);
+    await this.writeToPostCommitHookFile();
   }
 
   async removePostCommitHook(): Promise<void> {
-    console.log('Remove Post Commit Hook');
+    await fsex.remove(this.postCommitHookFile);
+  }
+
+  async updatePostCommitHook(): Promise<void> {
+    this.writeToPostCommitHookFile();
+  }
+
+  private async writeToPostCommitHookFile(): Promise<void> {
+    const tplData = {
+      trusted: isRunTrusted(),
+      droneFile: this.context.droneFile,
+    };
+    const postCommitScript = Mustache.render(POST_COMMIT_TEMPLATE, tplData);
+    await fsex.writeFile(this.postCommitHookFile, postCommitScript, {
+      mode: 755,
+    });
   }
 }

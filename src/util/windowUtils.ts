@@ -1,10 +1,11 @@
+/* eslint-disable header/header */
+
 //https://github.com/redhat-developers/vscode-tekton
 
 /*-----------------------------------------------------------------------------------------------
  *  Copyright (c) Red Hat, Inc. All rights reserved.
  *  Licensed under the MIT License. See LICENSE file in the project root for license information.
  *-----------------------------------------------------------------------------------------------*/
-// eslint-disable-next-line header/header
 
 'use strict';
 
@@ -12,8 +13,12 @@ import { window, Terminal, TerminalOptions } from 'vscode';
 import * as path from 'path';
 
 export class WindowUtil {
-
-  static createTerminal(name: string, cwd: string, toolLocation?: string, env: NodeJS.ProcessEnv = process.env): Terminal {
+  static createTerminal(
+    name: string,
+    cwd: string,
+    toolLocation?: string,
+    env: NodeJS.ProcessEnv = process.env
+  ): Terminal {
     const finalEnv: NodeJS.ProcessEnv = {};
     Object.assign(finalEnv, env);
     const key = process.platform === 'win32' ? 'Path' : 'PATH';
@@ -24,7 +29,7 @@ export class WindowUtil {
     const options: TerminalOptions = {
       cwd: cwd,
       name: name,
-      env: finalEnv
+      env: finalEnv,
     };
     return window.createTerminal(options);
   }

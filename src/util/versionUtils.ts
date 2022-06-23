@@ -4,8 +4,8 @@
  *-----------------------------------------------------------------------------------------------*/
 import { Octokit } from 'octokit';
 import * as semver from 'semver';
-import { Errorable,failed } from '../errorable';
-import * as fs from 'fs';
+import { Errorable, failed } from '../errorable';
+import * as fsex from 'fs-extra';
 import moment = require('moment');
 
 const versionRe = new RegExp(/^[v]?([0-9]+\.[0-9]+\.[0-9]+[-\w]*)$/);
@@ -16,70 +16,85 @@ export class ToolVersionInfo {
   readonly availableVersion: string;
 }
 
-export function asVersionNumber(versionText: string): string{
+export function asVersionNumber(versionText: string): string {
   const versionNumbers: RegExpExecArray = versionRe.exec(versionText);
 
-  if (versionNumbers && versionNumbers.length > 1){
+  if (versionNumbers && versionNumbers.length > 1) {
     return versionNumbers[1];
   }
 
   return versionText;
 }
 
-export function asGithubTag(versionText: string): string{
+export function asGithubTag(versionText: string): string {
   return `v${versionText}`;
 }
 
-export async function getStableReleases(owner:string,repo:string): Promise<Errorable<string[]>> {
+export async function getStableReleases(
+  owner: string,
+  repo: string
+): Promise<Errorable<string[]>> {
   try {
     const octokit = new Octokit();
-    const {data} = await octokit.rest.repos
-      .listReleases({owner: owner,repo: repo});
+    const { data } = await octokit.rest.repos.listReleases({
+      owner: owner,
+      repo: repo,
+    });
 
     let stableReleases = data
-      .map(r => r.tag_name)
-      .filter(tag => stableVersionRe.test(tag));
-    stableReleases = semver.rsort(stableReleases,{includePrerelease:false});
+      .map((r) => r.tag_name)
+      .filter((tag) => stableVersionRe.test(tag));
+    stableReleases = semver.rsort(stableReleases, { includePrerelease: false });
     return { succeeded: true, result: stableReleases };
-  } catch (e: any){
+  } catch (e: any) {
     return { succeeded: false, error: [e.message] };
   }
 }
 
-export async function cacheAndGetLatestRelease(owner:string,repo:string,releaseCacheFile:string):Promise<Errorable<string>> {
+export async function cacheAndGetLatestRelease(
+  owner: string,
+  repo: string,
+  releaseCacheFile: string
+): Promise<Errorable<string>> {
   let releases: string[];
-  try {
-    const stats = await fs.promises.stat(releaseCacheFile);
+  const cacheExists = await fsex.pathExists(releaseCacheFile);
+  if (cacheExists) {
+    const stats = await fsex.stat(releaseCacheFile);
     //create or refresh cache
     if (refreshCache(stats)) {
-      return await cacheAndGetRelease(releaseCacheFile,repo,owner);
+      return await cacheAndGetRelease(releaseCacheFile, repo, owner);
     } else {
-      const dataBuffer = fs.readFileSync(releaseCacheFile,'utf-8');
-      if (dataBuffer){
-        releases = JSON.parse(dataBuffer); 
-      }
+      releases = await fsex.readJSON(releaseCacheFile, {
+        encoding: 'utf-8',
+      });
     }
-    return { succeeded: true, result:releases[0]};
-  } catch (err: any){
-    if (err.code == 'ENOENT'){
-      return await cacheAndGetRelease(releaseCacheFile,repo,owner);
-    }
-    return { succeeded: true, result:`Error getting from cache ${err}`};
+    return { succeeded: true, result: releases[0] };
+  } else {
+    return await cacheAndGetRelease(releaseCacheFile, repo, owner);
   }
 }
 
-async function cacheAndGetRelease(releaseCacheFile:string,repo:string,owner): Promise<Errorable<string>> {
-  const releasesResult = await getStableReleases(owner,repo);
+async function cacheAndGetRelease(
+  releaseCacheFile: string,
+  repo: string,
+  owner: string
+): Promise<Errorable<string>> {
+  const releasesResult = await getStableReleases(owner, repo);
   if (failed(releasesResult)) {
-    return { succeeded: false, error: [`Failed to find solo-io/${repo} stable version: ${releasesResult.error[0]}`]};
+    return {
+      succeeded: false,
+      error: [
+        `Failed to find ${owner}/${repo} stable version: ${releasesResult.error[0]}`,
+      ],
+    };
   }
   const releases = releasesResult.result;
-  await fs.promises.writeFile(releaseCacheFile,JSON.stringify(releases));
-  return { succeeded: true, result:releases[0]};
+  await fsex.writeFile(releaseCacheFile, JSON.stringify(releases));
+  return { succeeded: true, result: releases[0] };
 }
 
 //Check if the file is 24 hours old
-function refreshCache(stats: fs.Stats):boolean{
+function refreshCache(stats: fsex.Stats): boolean {
   const modifiedTime = stats.mtimeMs;
   const days = moment().diff(moment(modifiedTime), 'days');
   return days > 1;

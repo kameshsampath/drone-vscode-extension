@@ -1,3 +1,5 @@
+/* eslint-disable header/header */
+
 //https://github.com/redhat-developers/vscode-tekton
 
 /*-----------------------------------------------------------------------------------------------
@@ -5,11 +7,9 @@
  *  Licensed under the MIT License. See LICENSE file in the project root for license information.
  *-----------------------------------------------------------------------------------------------*/
 
-// eslint-disable-next-line header/header
 'use strict';
 
 export class Platform {
-
   static identify(map): string | undefined {
     if (map[Platform.OS]) {
       return map[Platform.OS]();
@@ -33,7 +33,7 @@ export class Platform {
     return Platform.getEnv();
   }
 
-  static get ARCH(): string{
+  static get ARCH(): string {
     return Platform.getArch();
   }
 
@@ -41,10 +41,10 @@ export class Platform {
     return process.env;
   }
 
-  static getUserHomePath(): string|undefined {
+  static getUserHomePath(): string | undefined {
     return Platform.identify({
       win32: () => Platform.ENV.USERPROFILE,
-      default: () => Platform.ENV.HOME
+      default: () => Platform.ENV.HOME,
     });
   }
 }

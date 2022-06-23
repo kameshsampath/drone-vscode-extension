@@ -19,17 +19,16 @@ export async function activate(
   const droneCli = await DroneCli();
 
   const disposables = [
-    vscode.commands.registerCommand('vscode-drone.about', (context) =>
+    vscode.commands.registerCommand('vscode-drone.about', () =>
       droneCli.about()
     ),
 
-    vscode.commands.registerCommand('vscode-drone.run', (context) =>
-      droneCli.exec()
-    ),
+    vscode.commands.registerCommand('vscode-drone.run', () => droneCli.exec()),
   ];
 
   disposables.forEach((e) => context.subscriptions.push(e));
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   vscode.workspace.onDidChangeConfiguration((e) => {
     if (affectsUs) {
       droneCli.handleConfigChange();
@@ -40,32 +39,3 @@ export async function activate(
 // this method is called when your extension is deactivated
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 export function deactivate(): void {}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function execute<T>(
-  command: (...args: T[]) => Promise<any> | void,
-  ...params: T[]
-): any | undefined {
-  try {
-    const res = command.call(null, ...params);
-    return res && res.then
-      ? res
-          .then((result: string) => {
-            displayResult(result);
-          })
-          .catch((err: Error) => {
-            vscode.window.showErrorMessage(
-              err.message ? err.message : err.toString()
-            );
-          })
-      : undefined;
-  } catch (err: any) {
-    vscode.window.showErrorMessage(err);
-  }
-}
-
-function displayResult(result?: string): void {
-  if (result && typeof result === 'string') {
-    vscode.window.showInformationMessage(result);
-  }
-}

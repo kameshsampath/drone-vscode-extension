@@ -1,3 +1,8 @@
+/*-----------------------------------------------------------------------------------------------
+ *  Copyright (c) Harness, Inc. All rights reserved.
+ *  Licensed under the MIT License. See LICENSE file in the project root for license information.
+ *-----------------------------------------------------------------------------------------------*/
+
 import * as vscode from 'vscode';
 import {
   cli,
@@ -35,7 +40,7 @@ export interface DroneCli {
   handleConfigChange(): Promise<void>;
 }
 
-interface DroneContext {
+export interface DroneContext {
   readonly droneFile: vscode.Uri;
   readonly droneWorkspaceFolder: vscode.WorkspaceFolder;
   readonly gitHookUtil: GitHookUtil;
@@ -52,7 +57,8 @@ class DroneCliImpl implements DroneCli {
   }
 
   async handleConfigChange(): Promise<void> {
-    if (isRunOnGitCommit()) {
+    const val = isRunOnGitCommit();
+    if (val) {
       await this.context.gitHookUtil.addPostCommitHook();
     } else {
       await this.context.gitHookUtil.removePostCommitHook();
@@ -79,11 +85,11 @@ class DroneCliImpl implements DroneCli {
         command,
         pipelineName,
         cwd,
-        `Drone::Pipeline`
+        'Drone::Pipeline'
       );
     } else {
       vscode.window.showErrorMessage(
-        "No drone pipeline file '.drone.yml' exists in the workspace"
+        'No drone pipeline file ".drone.yml" exists in the workspace'
       );
     }
   }
@@ -155,7 +161,6 @@ class DroneCliImpl implements DroneCli {
 }
 
 async function initDroneContext(): Promise<DroneContext> {
-  let droneWorkspaceFolder: vscode.WorkspaceFolder;
   let droneFileUri: vscode.Uri;
   const droneFiles = await vscode.workspace.findFiles(
     '**/.drone.yml',
@@ -168,9 +173,13 @@ async function initDroneContext(): Promise<DroneContext> {
     //TODO show quick pick allowing user to choose the pipeline file
   }
 
-  droneWorkspaceFolder = vscode.workspace.getWorkspaceFolder(droneFileUri);
+  const droneWorkspaceFolder =
+    vscode.workspace.getWorkspaceFolder(droneFileUri);
 
-  const gitHookUtil = await GitHookUtil(droneWorkspaceFolder);
+  const gitHookUtil = await GitHookUtil(
+    vscode.workspace.asRelativePath(droneFileUri),
+    droneWorkspaceFolder
+  );
 
   return {
     droneFile: droneFileUri,
