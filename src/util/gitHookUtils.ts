@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import { GitExtension, Repository } from '../types/git';
-import { isRunTrusted } from './settings';
+import { getToolLocationFromConfig, isRunTrusted } from './settings';
 import * as fsex from 'fs-extra';
 import * as path from 'path';
 import * as Mustache from 'mustache';
@@ -22,12 +22,10 @@ interface GitContext {
   readonly gitRepository: Repository;
 }
 
-const POST_COMMIT_TEMPLATE = `
-#!/bin/bash
-
+const POST_COMMIT_TEMPLATE = `#!/usr/bin/env bash
 set -e
 
-drone exec  {{#trusted}} --trusted {{/trusted}} {{droneFile}}
+{{&droneCommand}} exec  {{#trusted}} --trusted {{/trusted}} {{&droneFile}}
 `;
 
 export async function GitHookUtil(
@@ -40,7 +38,7 @@ export async function GitHookUtil(
 
   //gitRepo will be null if the repository is not an existing git repo
   //i.e. no .git folder
-  const gitRepo = await git.openRepository(gitRootFolder.uri);
+  let gitRepo = await git.openRepository(gitRootFolder.uri);
 
   if (!gitRepo) {
     const initGitRepoRequest = await vscode.window.showInformationMessage(
@@ -56,7 +54,7 @@ export async function GitHookUtil(
           cancellable: false,
         },
         async (progress) => {
-          await git.init(gitRootFolder.uri);
+          gitRepo = await git.init(gitRootFolder.uri);
           progress.report({ increment: 100 });
           return;
         }
@@ -85,7 +83,7 @@ class GitHookUtilImpl implements GitHookUtil {
   }
 
   async addPostCommitHook(): Promise<void> {
-    await this.writeToPostCommitHookFile();
+    await this.writeToPostCommitHookFile(true);
   }
 
   async removePostCommitHook(): Promise<void> {
@@ -96,14 +94,18 @@ class GitHookUtilImpl implements GitHookUtil {
     this.writeToPostCommitHookFile();
   }
 
-  private async writeToPostCommitHookFile(): Promise<void> {
-    const tplData = {
-      trusted: isRunTrusted(),
-      droneFile: this.context.droneFile,
-    };
-    const postCommitScript = Mustache.render(POST_COMMIT_TEMPLATE, tplData);
-    await fsex.writeFile(this.postCommitHookFile, postCommitScript, {
-      mode: 755,
-    });
+  private async writeToPostCommitHookFile(force?: boolean): Promise<void> {
+    const hookFileExists = await fsex.pathExists(this.postCommitHookFile);
+    if (hookFileExists || force) {
+      const tplData = {
+        droneCommand: getToolLocationFromConfig(),
+        trusted: isRunTrusted(),
+        droneFile: this.context.droneFile,
+      };
+      const postCommitScript = Mustache.render(POST_COMMIT_TEMPLATE, tplData);
+      await fsex.outputFile(this.postCommitHookFile, postCommitScript, {
+        mode: 0o755,
+      });
+    }
   }
 }

@@ -63,6 +63,10 @@ class DroneCliImpl implements DroneCli {
     } else {
       await this.context.gitHookUtil.removePostCommitHook();
     }
+    // handling any drone exec parameter changes
+    if (val && (isRunTrusted() || !isRunTrusted())) {
+      await this.context.gitHookUtil.updatePostCommitHook();
+    }
   }
 
   async exec(): Promise<void> {
