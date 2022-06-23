@@ -12,6 +12,7 @@ export function run(): Promise<void> {
   const mocha = new Mocha({
     ui: 'tdd',
     color: true,
+    timeout: 0,
   });
 
   const testsRoot = path.resolve(__dirname, '..');

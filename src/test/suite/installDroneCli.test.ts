@@ -13,12 +13,17 @@ import * as fsex from 'fs-extra';
 import * as path from 'path';
 import * as _ from 'lodash';
 import { failed } from '../../errorable';
+import { NewInstaller as DroneCliInstaller } from '../../util/installDroneCli';
+import * as shell from 'shelljs';
 
-suite('VersionUtils Test Suite', () => {
+suite('Install Drone CLI Test Suite', () => {
   const cacheDir = fsex.mkdtempSync(path.join(__dirname, 'version_utils'));
   const releaseCacheFile = path.join(cacheDir, 'drone-cli-releases.json');
   const owner = 'harness';
   const repo = 'drone-cli';
+  const droneCliInstaller = DroneCliInstaller(cacheDir);
+  let toolInstallLocation: string;
+
   test('Create Cache If Not Present', async () => {
     const result = await cacheAndGetLatestRelease(
       owner,
@@ -89,5 +94,44 @@ suite('VersionUtils Test Suite', () => {
   test('Check Get Version Number as GitHub Tag ', () => {
     const ghTag = asGithubTag('1.5.0');
     assert.equal('v1.5.0', ghTag, `Expected "v1.5.0" but got ${ghTag}`);
+  });
+
+  test('Download latest Drone CLI', async () => {
+    const installResult = await droneCliInstaller.installOrUpgradeDroneCli();
+    if (!failed(installResult)) {
+      assert.ok(
+        fsex.existsSync(path.join(cacheDir, 'tools')),
+        'Expected tools directory to have been created but its not created '
+      );
+      assert.ok(
+        fsex.existsSync(path.join(cacheDir, 'tools', 'drone')),
+        'Expecting drone cli to be have been downloaded but it does not exist'
+      );
+      const droneVersionCmd = `${droneCliInstaller.getToolLocation()} --version`;
+      shell.config.execPath = shell.which('node').toString();
+      const cmdExec = shell.exec(droneVersionCmd, { silent: true });
+      assert.ok(cmdExec.code == 0, `Error running command ${droneVersionCmd}`);
+      const versionOut = cmdExec.stdout.trim();
+      assert.equal(
+        versionOut,
+        'drone version 1.5.0',
+        'Expecting out put "drone version 1.5.0" but got ${versionOut}'
+      );
+      toolInstallLocation = installResult.result;
+    } else {
+      assert.fail(_.join(installResult.error, ' '));
+    }
+  });
+  test('Do not Download If No Upgrade Available', async () => {
+    const installResult = await droneCliInstaller.installOrUpgradeDroneCli();
+    if (!failed(installResult)) {
+      assert.equal(
+        installResult.result,
+        toolInstallLocation,
+        `Expected drone cli install location to be ${toolInstallLocation} but got ${installResult.result}`
+      );
+    } else {
+      assert.fail(_.join(installResult.error, ' '));
+    }
   });
 });

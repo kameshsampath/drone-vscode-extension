@@ -11,12 +11,15 @@ export const EXTENSION_CONFIG_KEY = 'vscode-drone';
 export const DRONE_CLI_COMMAND = 'drone';
 
 export function getInstallFolder(): string {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return path.resolve(Platform.getUserHomePath()!, `.${EXTENSION_CONFIG_KEY}`);
+  return path.resolve(Platform.getUserHomePath(), `.${EXTENSION_CONFIG_KEY}`);
 }
 
-export function getToolLocation(): string {
-  return path.resolve(getInstallFolder(), 'tools');
+export function getToolLocation(installFolder?: string): string {
+  if (!installFolder) {
+    return path.resolve(getInstallFolder(), 'tools');
+  } else {
+    return path.resolve(installFolder, 'tools');
+  }
 }
 
 export function affectsUs(change: vscode.ConfigurationChangeEvent): boolean {

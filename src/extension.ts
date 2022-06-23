@@ -4,7 +4,8 @@
  *-----------------------------------------------------------------------------------------------*/
 import * as vscode from 'vscode';
 import { create as DroneCli } from './drone';
-import { installOrUpgradeDroneCli } from './util/installDroneCli';
+import { failed } from './errorable';
+import { NewInstaller as DroneCliInstaller } from './util/installDroneCli';
 import { affectsUs } from './util/settings';
 
 export let contextGlobalState: vscode.ExtensionContext;
@@ -14,7 +15,14 @@ export async function activate(
 ): Promise<void> {
   contextGlobalState = context;
 
-  await installOrUpgradeDroneCli(null);
+  const droneCliInstaller = DroneCliInstaller();
+  const installResult = await droneCliInstaller.installOrUpgradeDroneCli();
+
+  if (failed(installResult)) {
+    vscode.window.showErrorMessage(
+      `Error downloading drone cli ${installResult.error}`
+    );
+  }
 
   const droneCli = await DroneCli();
 
