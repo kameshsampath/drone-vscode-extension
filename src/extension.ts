@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE file in the project root for license information.
  *-----------------------------------------------------------------------------------------------*/
 import * as vscode from 'vscode';
-import { create as DroneCli } from './drone';
+import { create as DroneCli, initDroneContext } from './drone';
 import { failed } from './errorable';
 import { NewInstaller as DroneCliInstaller } from './util/installDroneCli';
 import { affectsUs } from './util/settings';
@@ -24,7 +24,8 @@ export async function activate(
     );
   }
 
-  const droneCli = await DroneCli();
+  const droneContext = await initDroneContext();
+  const droneCli = await DroneCli(droneContext);
 
   const disposables = [
     vscode.commands.registerCommand('vscode-drone.about', () =>
@@ -32,6 +33,13 @@ export async function activate(
     ),
 
     vscode.commands.registerCommand('vscode-drone.run', () => droneCli.exec()),
+    vscode.commands.registerCommand('vscode-drone.addDroneToPath', () =>
+      droneCli.addDroneCliToPath()
+    ),
+    vscode.commands.registerCommand(
+      'vscode-drone.newDronePipelineFile',
+      () => droneCli.newPipeline
+    ),
   ];
 
   disposables.forEach((e) => context.subscriptions.push(e));

@@ -11,6 +11,10 @@
     "Snippets"
   ],
   "activationEvents": [
+    "onCommand:vscode-drone.run",
+    "onCommand:vscode-drone.about",
+    "onCommand:vscode-drone.addDroneToPath",
+    "onLanguage:yaml",
     "workspaceContains:**/.drone.yml"
   ],
   "main": "./dist/extension.js",
@@ -29,8 +33,14 @@
         "command": "vscode-drone.run",
         "title": "Run Pipeline",
         "category": "Drone"
+      },
+      {
+        "command": "vscode-drone.addDroneToPath",
+        "title": "Add 'drone' cli to 'PATH'",
+        "category": "Drone"
       }
     ],
+    "menus": {},
     "configuration": {
       "type": "object",
       "title": "Drone",
@@ -156,6 +166,7 @@
   },
   "dependencies": {
     "@types/js-yaml": "^4.0.5",
+    "@types/lodash": "^4.14.182",
     "@types/mustache": "^4.1.3",
     "@types/targz": "^1.0.1",
     "@types/unzip-stream": "^0.3.1",

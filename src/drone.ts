@@ -23,10 +23,15 @@ import {
 import * as yaml from 'js-yaml';
 import * as fsex from 'fs-extra';
 import { GitHookUtil } from './util/gitHookUtils';
+import { Errorable, failed } from './errorable';
+import { NewInstaller as DroneCliInstaller } from './util/installDroneCli';
+import { Platform } from './util/platform';
+import * as _ from 'lodash';
 
 export interface DroneCli {
   exec(): Promise<void>;
   about(): Promise<void>;
+  addDroneCliToPath(): Promise<Errorable<string>>;
   executeInTerminal(
     command: CliCommand,
     resourceName?: string,
@@ -38,22 +43,126 @@ export interface DroneCli {
     fail?: boolean
   ): Promise<CliExitData>;
   handleConfigChange(): Promise<void>;
+  refreshContext(): Promise<void>;
 }
 
 export interface DroneContext {
-  readonly droneFile: vscode.Uri;
-  readonly droneWorkspaceFolder: vscode.WorkspaceFolder;
-  readonly gitHookUtil: GitHookUtil;
+  droneFile: vscode.Uri;
+  droneWorkspaceFolder: vscode.WorkspaceFolder;
+  gitHookUtil: GitHookUtil;
 }
 
-export async function create(): Promise<DroneCli> {
-  const droneContext: DroneContext = await initDroneContext();
+//TODO cleanup
+export async function initDroneContext(): Promise<DroneContext | undefined> {
+  const droneFiles = await vscode.workspace.findFiles('**/.drone.yml');
+  let droneFileUri = _.first(droneFiles);
+
+  let droneWorkspaceFolder = _.first(vscode.workspace.workspaceFolders);
+
+  if (!droneFileUri) {
+    const droneFileCreateRequest = await vscode.window.showWarningMessage(
+      'No Drone pipeline file exists, do want to create one ?',
+      'Yes',
+      'No'
+    );
+
+    if (droneFileCreateRequest === 'Yes') {
+      droneFileUri = await createAndOpenDronePipelineFile(droneWorkspaceFolder);
+    } else {
+      const confirmRequest = await vscode.window.showWarningMessage(
+        'Without Drone pipeline file, Drone features may not work correctly.',
+        'Create Drone Pipeline',
+        'OK'
+      );
+      if (confirmRequest === 'Create Drone Pipeline') {
+        droneFileUri = await createAndOpenDronePipelineFile(
+          droneWorkspaceFolder
+        );
+      } else {
+        return {
+          droneFile: null,
+          droneWorkspaceFolder,
+          gitHookUtil: null,
+        };
+      }
+    }
+  }
+
+  droneWorkspaceFolder = vscode.workspace.getWorkspaceFolder(droneFileUri);
+
+  const gitHookUtil = await GitHookUtil(
+    vscode.workspace.asRelativePath(droneFileUri),
+    droneWorkspaceFolder
+  );
+
+  return {
+    droneFile: droneFileUri,
+    droneWorkspaceFolder,
+    gitHookUtil,
+  };
+}
+
+async function createAndOpenDronePipelineFile(
+  droneWorkspaceFolder: vscode.WorkspaceFolder
+): Promise<vscode.Uri> {
+  const droneFileUri = await createDroneFile(droneWorkspaceFolder);
+  const doc = await vscode.workspace.openTextDocument(droneFileUri);
+  await vscode.window.showTextDocument(doc, {
+    preview: true,
+    preserveFocus: true,
+  });
+  return droneFileUri;
+}
+
+export async function create(droneContext: DroneContext): Promise<DroneCli> {
   return new DroneCliImpl(droneContext);
 }
 
 class DroneCliImpl implements DroneCli {
-  constructor(private readonly context: DroneContext) {
+  constructor(private context: DroneContext) {
     this.context = context;
+  }
+
+  async refreshContext(): Promise<void> {
+    this.context = await initDroneContext();
+  }
+
+  async addDroneCliToPath(): Promise<Errorable<string>> {
+    //Ensure Drone installed
+    const droneCliInstaller = DroneCliInstaller();
+    const installResult = await droneCliInstaller.installOrUpgradeDroneCli();
+    if (failed(installResult)) {
+      return installResult;
+    } else {
+      if (Platform.OS === 'darwin' || Platform.OS === 'linux') {
+        const destPath = await vscode.window.showInputBox({
+          title: 'Add drone cli to user PATH',
+          prompt: 'Where to create the link for drone cli?',
+          placeHolder: `${Platform.getUserHomePath()}/.local/bin`,
+          value: `${Platform.getUserHomePath()}/.local/bin`,
+        });
+
+        if (destPath) {
+          await fsex.ensureDir(destPath, { mode: 0o755 });
+          const symlinkPath = path.join(destPath, DRONE_CLI_COMMAND);
+          await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `Adding 'drone' cli to ${symlinkPath}`,
+              cancellable: false,
+            },
+            async (progress) => {
+              const droneCli = getToolLocationFromConfig();
+              await fsex.ensureSymlink(droneCli, symlinkPath);
+              progress.report({ increment: 100 });
+              return { succeeded: true, result: symlinkPath };
+            }
+          );
+        }
+      } else if (Platform.OS === 'windows') {
+        //TODO
+      }
+    }
   }
 
   async handleConfigChange(): Promise<void> {
@@ -164,30 +273,30 @@ class DroneCliImpl implements DroneCli {
   }
 }
 
-async function initDroneContext(): Promise<DroneContext> {
-  let droneFileUri: vscode.Uri;
-  const droneFiles = await vscode.workspace.findFiles(
-    '**/.drone.yml',
-    '**/.drone.yaml'
-  );
-
-  if (droneFiles?.length == 1) {
-    droneFileUri = droneFiles[0];
-  } else if (droneFiles?.length > 1) {
-    //TODO show quick pick allowing user to choose the pipeline file
+async function createDroneFile(
+  rootFolder?: vscode.WorkspaceFolder
+): Promise<vscode.Uri> {
+  if (rootFolder) {
+    const droneFile = vscode.Uri.file(
+      path.join(rootFolder.uri.fsPath, '.drone.yml')
+    );
+    await fsex.writeFile(
+      droneFile.fsPath,
+      `kind: pipeline
+type: docker
+name: my-pipeline
+platform:
+  os: linux
+  arch: ${Platform.ARCH}
+steps:
+  - name: step-name
+    image: busybox
+    commands:
+    - echo 'Test World'
+`
+    );
+    return droneFile;
+  } else {
+    vscode.window.showErrorMessage('No folder exists in workspace');
   }
-
-  const droneWorkspaceFolder =
-    vscode.workspace.getWorkspaceFolder(droneFileUri);
-
-  const gitHookUtil = await GitHookUtil(
-    vscode.workspace.asRelativePath(droneFileUri),
-    droneWorkspaceFolder
-  );
-
-  return {
-    droneFile: droneFileUri,
-    droneWorkspaceFolder,
-    gitHookUtil,
-  };
 }
