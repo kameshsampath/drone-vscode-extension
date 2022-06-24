@@ -36,10 +36,6 @@ export async function activate(
     vscode.commands.registerCommand('vscode-drone.addDroneToPath', () =>
       droneCli.addDroneCliToPath()
     ),
-    vscode.commands.registerCommand(
-      'vscode-drone.newDronePipelineFile',
-      () => droneCli.newPipeline
-    ),
   ];
 
   disposables.forEach((e) => context.subscriptions.push(e));
