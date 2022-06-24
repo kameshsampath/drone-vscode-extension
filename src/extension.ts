@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See LICENSE file in the project root for license information.
  *-----------------------------------------------------------------------------------------------*/
 import * as vscode from 'vscode';
+import { runStep, runSteps } from './commands/stepRunner';
 import { create as DroneCli, initDroneContext } from './drone';
 import { failed } from './errorable';
 import { NewInstaller as DroneCliInstaller } from './util/installDroneCli';
@@ -36,6 +37,12 @@ export async function activate(
     vscode.commands.registerCommand('vscode-drone.addDroneToPath', () =>
       droneCli.addDroneCliToPath()
     ),
+    vscode.commands.registerCommand('vscode-drone.runStep', () =>
+      runStep(droneCli)
+    ),
+    vscode.commands.registerCommand('vscode-drone.runSteps', () =>
+      runSteps(droneCli)
+    ),
   ];
 
   disposables.forEach((e) => context.subscriptions.push(e));
@@ -46,6 +53,7 @@ export async function activate(
       droneCli.handleConfigChange();
     }
   });
+
 }
 
 // this method is called when your extension is deactivated

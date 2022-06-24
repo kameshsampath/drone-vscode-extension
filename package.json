@@ -10,6 +10,11 @@
     "Other",
     "Snippets"
   ],
+  "icon": "./images/drone-logo-png-dark-128.png",
+  "keywords": [
+    "Pipelines",
+    "Drone"
+  ],
   "activationEvents": [
     "onCommand:vscode-drone.run",
     "onCommand:vscode-drone.about",
@@ -24,23 +29,59 @@
         "command": "vscode-drone.about",
         "title": "About Drone",
         "category": "Drone",
-        "icon": {
-          "dark": "images/dark/versions.svg",
-          "light": "images/light/versions.svg"
-        }
+        "icon": "$(versions)"
       },
       {
         "command": "vscode-drone.run",
         "title": "Run Pipeline",
-        "category": "Drone"
+        "category": "Drone",
+        "icon": "$(play)"
       },
       {
         "command": "vscode-drone.addDroneToPath",
         "title": "Add 'drone' cli to 'PATH'",
         "category": "Drone"
+      },
+      {
+        "command": "vscode-drone.runStep",
+        "title": "Run Pipeline Step",
+        "category": "Drone",
+        "enablement": "resourceFilename == '.drone.yml' &&  editorHasSelection"
+      },
+      {
+        "command": "vscode-drone.runSteps",
+        "title": "Run Pipeline Steps",
+        "category": "Drone",
+        "enablement": "resourceFilename == '.drone.yml'",
+        "icon": "$(list-tree)"
       }
     ],
-    "menus": {},
+    "menus": {
+      "editor/title": [
+        {
+          "when": "resourceFilename == '.drone.yml'",
+          "group": "navigation",
+          "command": "vscode-drone.run"
+        },
+        {
+          "when": "resourceFilename == '.drone.yml'",
+          "group": "navigation",
+          "command": "vscode-drone.runSteps"
+        }
+      ],
+      "editor/context": [
+        {
+          "when": "resourceFilename == '.drone.yml' && editorHasSelection",
+          "group": "drone",
+          "command": "vscode-drone.runStep"
+        },
+        {
+          "when": "resourceFilename == '.drone.yml'",
+          "group": "drone",
+          "command": "vscode-drone.runSteps"
+        }
+      ]
+    },
     "configuration": {
       "type": "object",
       "title": "Drone",
@@ -162,14 +203,14 @@
     "ts-loader": "^9.3.0",
     "typescript": "^4.7.4",
     "webpack": "^5.72.1",
-    "webpack-cli": "^4.9.2"
-  },
-  "dependencies": {
+    "webpack-cli": "^4.9.2",
     "@types/js-yaml": "^4.0.5",
     "@types/lodash": "^4.14.182",
     "@types/mustache": "^4.1.3",
     "@types/targz": "^1.0.1",
-    "@types/unzip-stream": "^0.3.1",
+    "@types/unzip-stream": "^0.3.1"
+  },
+  "dependencies": {
     "axios": "^0.27.2",
     "fs-extra": "^10.1.0",
     "hasha": "^5.2.2",
@@ -186,9 +227,5 @@
     "shelljs": "^0.8.5",
     "targz": "^1.0.1",
     "unzip-stream": "^0.3.1"
-  },
-  "keywords": [
-    "Pipelines",
-    "Drone"
-  ]
+  }
 }

@@ -29,7 +29,7 @@ import { Platform } from './util/platform';
 import * as _ from 'lodash';
 
 export interface DroneCli {
-  exec(): Promise<void>;
+  exec(includeSteps?: string[],excludeSteps?:string[]): Promise<void>;
   about(): Promise<void>;
   addDroneCliToPath(): Promise<Errorable<string>>;
   executeInTerminal(
@@ -44,6 +44,7 @@ export interface DroneCli {
   ): Promise<CliExitData>;
   handleConfigChange(): Promise<void>;
   refreshContext(): Promise<void>;
+  getContext(): DroneContext;
 }
 
 export interface DroneContext {
@@ -123,6 +124,10 @@ class DroneCliImpl implements DroneCli {
     this.context = context;
   }
 
+  getContext(): DroneContext{
+    return this.context;
+  }
+
   async refreshContext(): Promise<void> {
     this.context = await initDroneContext();
   }
@@ -178,15 +183,20 @@ class DroneCliImpl implements DroneCli {
     }
   }
 
-  async exec(): Promise<void> {
+  async exec(includeSteps?: string[],excludeSteps?:string[]): Promise<void> {
     const cmdArgs: string[] = new Array<string>('exec');
     const droneFile = vscode.workspace.asRelativePath(this.context.droneFile);
-
     if (droneFile) {
       const cwd = this.context.droneWorkspaceFolder.uri.fsPath;
       cmdArgs.push(droneFile);
       if (isRunTrusted()) {
         cmdArgs.push('--trusted');
+      }
+      if (includeSteps){
+        includeSteps.forEach(iStep => cmdArgs.push(`--include=${iStep}`));
+      }
+      if (excludeSteps){
+        excludeSteps.forEach(eStep => cmdArgs.push(`--exclude=${eStep}`));
       }
       const pipelineName = await this.getPipelineName(
         path.join(cwd, droneFile)
