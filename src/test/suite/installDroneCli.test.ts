@@ -4,17 +4,17 @@
  *-----------------------------------------------------------------------------------------------*/
 
 import * as assert from 'assert';
+import * as fsex from 'fs-extra';
+import * as _ from 'lodash';
+import * as path from 'path';
+import * as shell from 'shelljs';
+import { failed } from '../../errorable';
+import { NewInstaller as DroneCliInstaller } from '../../util/installDroneCli';
 import {
   asGithubTag,
   asVersionNumber,
-  cacheAndGetLatestRelease,
+  cacheAndGetLatestRelease
 } from '../../util/versionUtils';
-import * as fsex from 'fs-extra';
-import * as path from 'path';
-import * as _ from 'lodash';
-import { failed } from '../../errorable';
-import { NewInstaller as DroneCliInstaller } from '../../util/installDroneCli';
-import * as shell from 'shelljs';
 
 suite('Install Drone CLI Test Suite', () => {
   const cacheDir = fsex.mkdtempSync(path.join(__dirname, 'version_utils'));

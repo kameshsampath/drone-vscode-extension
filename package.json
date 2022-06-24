@@ -182,7 +182,7 @@
     "compile": "tsc -p ./",
     "build": "npm run -S esbuild-base -- --sourcemap && npm run compile",
     "watch": "npm run -S esbuild-base -- --sourcemap --watch",
-    "pretest": "npm run clean  && npm run build && npm run compile",
+    "pretest": "npm run clean  && npm run build",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "test": "node ./out/test/runTest.js"
