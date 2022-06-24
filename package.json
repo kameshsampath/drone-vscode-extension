@@ -6,7 +6,16 @@
   "engines": {
     "vscode": "^1.68.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kameshsampath/vscode-drone.git"
+  },
+  "author": "Kamesh Sampath<kamesh.sampath@hotmail.com>",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kameshsampath/vscode-drone/issues"
+  },
+  "homepage": "https://github.com/kameshsampath/vscode-drone#readme",
   "categories": [
     "Other",
     "Snippets"
@@ -180,8 +189,9 @@
     "esbuild-base": "rimraf out && esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
     "clean": "rimraf out",
     "compile": "tsc -p ./",
-    "build": "npm run -S esbuild-base -- --sourcemap && npm run compile",
-    "watch": "npm run -S esbuild-base -- --sourcemap --watch",
+    "esbuild": "npm run esbuild-base -- --sourcemap",
+    "build": "npm run esbuild && npm run compile",
+    "watch": "npm run compile && npm run -S build -- --sourcemap --watch",
     "pretest": "npm run clean  && npm run build",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",

@@ -3,30 +3,30 @@
  *  Licensed under the MIT License. See LICENSE file in the project root for license information.
  *-----------------------------------------------------------------------------------------------*/
 
+import * as fsex from 'fs-extra';
+import * as yaml from 'js-yaml';
+import * as _ from 'lodash';
+import * as path from 'path';
 import * as vscode from 'vscode';
+import { Terminal, window } from 'vscode';
 import {
   cli,
   CliCommand,
   cliCommandToString,
   CliExitData,
-  createCliCommand,
+  createCliCommand
 } from './cli';
-import * as path from 'path';
-import { WindowUtil } from './util/windowUtils';
-import { Terminal, window } from 'vscode';
+import { Errorable, failed } from './errorable';
+import { GitHookUtil } from './util/gitHookUtils';
+import { NewInstaller as DroneCliInstaller } from './util/installDroneCli';
+import { Platform } from './util/platform';
 import {
   DRONE_CLI_COMMAND,
   getToolLocationFromConfig,
   isRunOnGitCommit,
-  isRunTrusted,
+  isRunTrusted
 } from './util/settings';
-import * as yaml from 'js-yaml';
-import * as fsex from 'fs-extra';
-import { GitHookUtil } from './util/gitHookUtils';
-import { Errorable, failed } from './errorable';
-import { NewInstaller as DroneCliInstaller } from './util/installDroneCli';
-import { Platform } from './util/platform';
-import * as _ from 'lodash';
+import { WindowUtil } from './util/windowUtils';
 
 export interface DroneCli {
   exec(...includeSteps: string[]): Promise<void>;
@@ -55,10 +55,16 @@ export interface DroneContext {
 
 //TODO cleanup
 export async function initDroneContext(): Promise<DroneContext | undefined> {
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  
+  if (!workspaceFolders || workspaceFolders.length === 0) {
+    vscode.window.showErrorMessage('Working with Drone Pipelines currently requires opening a workspace.');
+    return;
+  }
+  
+  let droneWorkspaceFolder = _.first(workspaceFolders);
   const droneFiles = await vscode.workspace.findFiles('**/.drone.yml');
   let droneFileUri = _.first(droneFiles);
-
-  let droneWorkspaceFolder = _.first(vscode.workspace.workspaceFolders);
 
   if (!droneFileUri) {
     const droneFileCreateRequest = await vscode.window.showWarningMessage(
