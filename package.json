@@ -6,6 +6,7 @@
   "engines": {
     "vscode": "^1.68.0"
   },
+  "license": "MIT",
   "categories": [
     "Other",
     "Snippets"
@@ -22,7 +23,7 @@
     "onLanguage:yaml",
     "workspaceContains:**/.drone.yml"
   ],
-  "main": "./dist/extension.js",
+  "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
@@ -175,14 +176,13 @@
     "vscode.git"
   ],
   "scripts": {
-    "vscode:prepublish": "npm run package",
-    "compile": "webpack",
-    "clean": "rimraf dist && rimraf out",
-    "package": "webpack --mode production --devtool hidden-source-map",
-    "compile-tests": "tsc -p . --outDir out",
-    "watch": "webpack --watch",
-    "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "npm run clean  && npm run compile && npm run compile-tests",
+    "vscode:prepublish": "npm run -S esbuild-base -- --minify",
+    "esbuild-base": "rimraf out && esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "clean": "rimraf out",
+    "compile": "tsc -p ./",
+    "build": "npm run -S esbuild-base -- --sourcemap && npm run compile",
+    "watch": "npm run -S esbuild-base -- --sourcemap --watch",
+    "pretest": "npm run clean  && npm run build && npm run compile",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "test": "node ./out/test/runTest.js"
@@ -191,15 +191,21 @@
     "@types/axios": "^0.14.0",
     "@types/fs-extra": "^9.0.13",
     "@types/glob": "^7.2.0",
+    "@types/js-yaml": "^4.0.5",
+    "@types/lodash": "^4.14.182",
     "@types/mocha": "^9.1.1",
     "@types/moment": "^2.13.0",
+    "@types/mustache": "^4.1.3",
     "@types/node": "16.x",
     "@types/semver": "^7.3.10",
     "@types/shelljs": "^0.8.11",
+    "@types/targz": "^1.0.1",
+    "@types/unzip-stream": "^0.3.1",
     "@types/vscode": "^1.68.0",
     "@typescript-eslint/eslint-plugin": "^5.29.0",
     "@typescript-eslint/parser": "^5.29.0",
     "@vscode/test-electron": "^2.1.3",
+    "esbuild": "^0.14.47",
     "eslint": "^8.18.0",
     "eslint-plugin-header": "^3.1.1",
     "glob": "^8.0.3",
@@ -208,12 +214,7 @@
     "ts-loader": "^9.3.0",
     "typescript": "^4.7.4",
     "webpack": "^5.72.1",
-    "webpack-cli": "^4.9.2",
-    "@types/js-yaml": "^4.0.5",
-    "@types/lodash": "^4.14.182",
-    "@types/mustache": "^4.1.3",
-    "@types/targz": "^1.0.1",
-    "@types/unzip-stream": "^0.3.1"
+    "webpack-cli": "^4.9.2"
   },
   "dependencies": {
     "axios": "^0.27.2",
