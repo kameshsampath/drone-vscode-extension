@@ -29,7 +29,7 @@ import { Platform } from './util/platform';
 import * as _ from 'lodash';
 
 export interface DroneCli {
-  exec(includeSteps?: string[],excludeSteps?:string[]): Promise<void>;
+  exec(...includeSteps: string[]): Promise<void>;
   about(): Promise<void>;
   addDroneCliToPath(): Promise<Errorable<string>>;
   executeInTerminal(
@@ -183,37 +183,38 @@ class DroneCliImpl implements DroneCli {
     }
   }
 
-  async exec(includeSteps?: string[],excludeSteps?:string[]): Promise<void> {
-    const cmdArgs: string[] = new Array<string>('exec');
-    const droneFile = vscode.workspace.asRelativePath(this.context.droneFile);
-    if (droneFile) {
-      const cwd = this.context.droneWorkspaceFolder.uri.fsPath;
-      cmdArgs.push(droneFile);
-      if (isRunTrusted()) {
-        cmdArgs.push('--trusted');
-      }
-      if (includeSteps){
-        includeSteps.forEach(iStep => cmdArgs.push(`--include=${iStep}`));
-      }
-      if (excludeSteps){
-        excludeSteps.forEach(eStep => cmdArgs.push(`--exclude=${eStep}`));
-      }
-      const pipelineName = await this.getPipelineName(
-        path.join(cwd, droneFile)
-      );
+  async exec(...execArgs: string[]): Promise<void> {
+    if (this.context.droneFile && await fsex.pathExists(this.context.droneFile.fsPath)){
+      const cmdArgs: string[] = new Array<string>('exec');
+      const droneFile = vscode.workspace.asRelativePath(this.context.droneFile);
+      if (droneFile) {
+        const cwd = this.context.droneWorkspaceFolder.uri.fsPath;
+        cmdArgs.push(droneFile);
+        if (isRunTrusted()) {
+          cmdArgs.push('--trusted');
+        }
+        if (execArgs){
+          execArgs.forEach(eArg => cmdArgs.push(eArg));
+        }
+        const pipelineName = await this.getPipelineName(
+          path.join(cwd, droneFile)
+        );
 
-      //TODO run in terminal and other options ..
-      const command = createCliCommand(DRONE_CLI_COMMAND, ...cmdArgs);
-      await this.executeInTerminal(
-        command,
-        pipelineName,
-        cwd,
-        'Drone::Pipeline'
-      );
+        //TODO run in terminal and other options ..
+        const command = createCliCommand(DRONE_CLI_COMMAND, ...cmdArgs);
+        await this.executeInTerminal(
+          command,
+          pipelineName,
+          cwd,
+          'Drone::Pipeline'
+        );
+      } else {
+        vscode.window.showErrorMessage(
+          'No drone pipeline file ".drone.yml" exists in the workspace'
+        );
+      }
     } else {
-      vscode.window.showErrorMessage(
-        'No drone pipeline file ".drone.yml" exists in the workspace'
-      );
+      await initDroneContext();
     }
   }
 

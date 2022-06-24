@@ -71,14 +71,19 @@
       ],
       "editor/context": [
         {
-          "when": "resourceFilename == '.drone.yml' && editorHasSelection",
+          "when": "resourceFilename == '.drone.yml'",
           "group": "drone",
-          "command": "vscode-drone.runStep"
+          "command": "vscode-drone.run"
         },
         {
           "when": "resourceFilename == '.drone.yml'",
           "group": "drone",
           "command": "vscode-drone.runSteps"
+        },
+        {
+          "when": "resourceFilename == '.drone.yml' && editorHasSelection",
+          "group": "drone",
+          "command": "vscode-drone.runStep"
         }
       ]
     },

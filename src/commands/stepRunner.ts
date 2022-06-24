@@ -17,9 +17,13 @@ export async function runStep(droneCli: DroneCli): Promise<void>{
     try {
       const pipelineSteps = loadAndGetSteps(document.getText());
       const step = document.getText(editor.selection);
-      const toRunSteps = _.intersection(pipelineSteps,[step]);
-      if (toRunSteps){
-        droneCli.exec(toRunSteps);
+      //TODO check if the selection range includes `name:`
+      let toRunSteps = _.intersection(pipelineSteps,[step]);
+      if (toRunSteps && toRunSteps.length > 0){
+        toRunSteps = _.map(toRunSteps,(item => `--include=${item}`));
+        droneCli.exec(...toRunSteps);
+      } else {
+        vscode.window.showInformationMessage(`Pipeline step ${step} does not exist, have selected the complete step name ?`);
       }
     } catch (e:any){
       vscode.window.showErrorMessage(`Error running pipeline steps ${e}`);
@@ -49,11 +53,12 @@ export async function runSteps(droneCli: DroneCli): Promise<void>{
       title:'Select Pipeline Steps to Run',
       ignoreFocusOut: true
     });
-    console.log(`Step Result:${selectedSteps}`);
+
     if (selectedSteps && selectedSteps.length > 0) {
-      const toRunSteps = _.intersection(pipelineSteps,selectedSteps);
-      if (toRunSteps){
-        droneCli.exec(toRunSteps);
+      let toRunSteps = _.intersection(pipelineSteps,selectedSteps);
+      if (toRunSteps && toRunSteps.length > 0){
+        toRunSteps = _.map(toRunSteps,(item => `--include=${item}`));
+        droneCli.exec(...toRunSteps);
       }
     } else {
       vscode.window.showInformationMessage('No steps selected to run');
