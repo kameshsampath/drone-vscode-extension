@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import * as _ from 'lodash';
-import { loadAndGetSteps } from '../util/pipelineYamlUtils';
+import { getStepNames, loadAndGetSteps } from '../util/pipelineYamlUtils';
 import { DroneCli } from '../drone';
 import * as fsex from 'fs-extra';
 
@@ -18,7 +18,7 @@ export async function runStep(droneCli: DroneCli): Promise<void>{
       const pipelineSteps = loadAndGetSteps(document.getText());
       const step = document.getText(editor.selection);
       //TODO check if the selection range includes `name:`
-      let toRunSteps = _.intersection(pipelineSteps,[step]);
+      let toRunSteps = _.intersection(getStepNames(pipelineSteps),[step]);
       if (toRunSteps && toRunSteps.length > 0){
         toRunSteps = _.map(toRunSteps,(item => `--include=${item}`));
         droneCli.exec(...toRunSteps);
@@ -48,14 +48,16 @@ export async function runSteps(droneCli: DroneCli): Promise<void>{
     }
 
     const pipelineSteps = loadAndGetSteps(pipelineYAML);
-    const selectedSteps = await vscode.window.showQuickPick(pipelineSteps,{
+    const pipelineStepNames = getStepNames(pipelineSteps); 
+    
+    const selectedSteps = await vscode.window.showQuickPick(pipelineStepNames,{
       canPickMany: true,
       title:'Select Pipeline Steps to Run',
       ignoreFocusOut: true
     });
 
     if (selectedSteps && selectedSteps.length > 0) {
-      let toRunSteps = _.intersection(pipelineSteps,selectedSteps);
+      let toRunSteps = _.intersection(pipelineStepNames,selectedSteps);
       if (toRunSteps && toRunSteps.length > 0){
         toRunSteps = _.map(toRunSteps,(item => `--include=${item}`));
         droneCli.exec(...toRunSteps);
