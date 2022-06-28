@@ -29,7 +29,7 @@
     "onCommand:vscode-drone.run",
     "onCommand:vscode-drone.about",
     "onCommand:vscode-drone.addDroneToPath",
-    "onLanguage:yaml",
+    "onLanguage:drone",
     "workspaceContains:**/.drone.yml"
   ],
   "main": "./out/extension.js",
@@ -64,6 +64,25 @@
         "category": "Drone",
         "enablement": "resourceFilename == '.drone.yml'",
         "icon": "$(list-tree)"
+      }
+    ],
+    "languages": [
+      {
+        "id": "drone",
+        "aliases": [
+          "Drone Pipeline"
+        ],
+        "extensions": [
+          ".drone.yml"
+        ],
+        "configuration": "./drone-language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "drone",
+        "scopeName": "source.drone",
+        "path": "./syntaxes/YAML.tmLanguage"
       }
     ],
     "menus": {
@@ -195,7 +214,7 @@
     "pretest": "npm run clean  && npm run build",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTests.js"
   },
   "devDependencies": {
     "@types/axios": "^0.14.0",
@@ -212,6 +231,7 @@
     "@types/targz": "^1.0.1",
     "@types/unzip-stream": "^0.3.1",
     "@types/vscode": "^1.68.0",
+    "@types/yaml": "^1.9.7",
     "@typescript-eslint/eslint-plugin": "^5.29.0",
     "@typescript-eslint/parser": "^5.29.0",
     "@vscode/test-electron": "^2.1.3",
@@ -242,6 +262,7 @@
     "semver": "^7.3.7",
     "shelljs": "^0.8.5",
     "targz": "^1.0.1",
-    "unzip-stream": "^0.3.1"
+    "unzip-stream": "^0.3.1",
+    "yaml": "^2.1.1"
   }
 }

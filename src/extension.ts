@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import { runStep, runSteps } from './commands/stepRunner';
 import { create as DroneCli, initDroneContext } from './drone';
 import { failed } from './errorable';
+import { providerDroneCompletions } from './services/completionProvider';
 import { NewInstaller as DroneCliInstaller } from './util/installDroneCli';
 import { affectsUs } from './util/settings';
 
@@ -52,6 +53,11 @@ export async function activate(
     if (affectsUs) {
       droneCli.handleConfigChange();
     }
+  });
+
+  //completion provider
+  vscode.languages.registerCompletionItemProvider('drone', {
+    provideCompletionItems: providerDroneCompletions
   });
 
 }

@@ -30,6 +30,24 @@
                 "${workspaceFolder}/out/**/*.js"
             ],
             "preLaunchTask": "${defaultBuildTask}"
-        }
+        },
+        {
+            "name": "Extension Single Test Debug",
+            "type": "extensionHost",
+            "request": "launch",
+            "sourceMaps": true,
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "--extensionDevelopmentPath=${workspaceFolder}",
+                "--extensionTestsPath=${workspaceFolder}/out/test/runTest.js",
+            ],
+            "outFiles": [
+                "${workspaceFolder}/out/test/**/*.js"
+            ],
+            "preLaunchTask": "npm: watch",
+            "env": {
+                "VSCODE_SINGLE_TEST": "${relativeFile}"
+            }
+        },
     ]
 }
