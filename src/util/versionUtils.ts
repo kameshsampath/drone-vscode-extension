@@ -2,10 +2,10 @@
  *  Copyright (c) Harness, Inc. All rights reserved.
  *  Licensed under the MIT License. See LICENSE file in the project root for license information.
  *-----------------------------------------------------------------------------------------------*/
+import * as fsex from 'fs-extra';
 import { Octokit } from 'octokit';
 import * as semver from 'semver';
 import { Errorable, failed } from '../errorable';
-import * as fsex from 'fs-extra';
 import moment = require('moment');
 
 const versionRe = new RegExp(/^[v]?([0-9]+\.[0-9]+\.[0-9]+[-\w]*)$/);
@@ -70,6 +70,7 @@ export async function cacheAndGetLatestRelease(
     }
     return { succeeded: true, result: releases[0] };
   } else {
+    await fsex.ensureFile(releaseCacheFile);
     return await cacheAndGetRelease(releaseCacheFile, repo, owner);
   }
 }

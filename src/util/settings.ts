@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See LICENSE file in the project root for license information.
  *-----------------------------------------------------------------------------------------------*/
 
-import * as vscode from 'vscode';
 import * as path from 'path';
+import * as vscode from 'vscode';
 import { Platform } from './platform';
 
 export const EXTENSION_CONFIG_KEY = 'vscode-drone';
@@ -173,7 +173,7 @@ export function getToolLocationFromConfig(os?: string, tool = 'drone'): string {
 
 const DRONE_CLI_CHECK_UPGRADE_KEY = `${EXTENSION_CONFIG_KEY}.drone.checkUpgrade`;
 
-export function getCheckForDroneCliUpgrade(): boolean {
+export function checkForDroneCliUpgrade(): boolean {
   return vscode.workspace.getConfiguration().get(DRONE_CLI_CHECK_UPGRADE_KEY);
 }
 

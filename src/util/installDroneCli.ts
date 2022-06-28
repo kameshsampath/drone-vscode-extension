@@ -2,29 +2,27 @@
  *  Copyright (c) Harness, Inc. All rights reserved.
  *  Licensed under the MIT License. See LICENSE file in the project root for license information.
  *-----------------------------------------------------------------------------------------------*/
-import * as vscode from 'vscode';
+import * as fsex from 'fs-extra';
 import * as path from 'path';
+import * as semver from 'semver';
 import { which } from 'shelljs';
+import * as vscode from 'vscode';
+import { cli, createCliCommand } from '../cli';
 import { Errorable, failed, succeeded } from '../errorable';
+import { Archive } from './archive';
+import { DownloadUtil } from './download';
 import { Platform } from './platform';
 import {
-  addPathToConfig,
-  DRONE_CLI_COMMAND,
-  EXTENSION_CONFIG_KEY,
-  getToolLocation,
+  addPathToConfig, checkForDroneCliUpgrade, DRONE_CLI_COMMAND,
+  EXTENSION_CONFIG_KEY, getToolLocation,
   toolPathBaseKey,
-  toolPathOSKey,
+  toolPathOSKey
 } from './settings';
 import {
   asVersionNumber,
   cacheAndGetLatestRelease,
-  ToolVersionInfo,
+  ToolVersionInfo
 } from './versionUtils';
-import * as fsex from 'fs-extra';
-import * as semver from 'semver';
-import { cli, createCliCommand } from '../cli';
-import { DownloadUtil } from './download';
-import { Archive } from './archive';
 
 interface InstallContext {
   installFolder: string;
@@ -96,25 +94,27 @@ class DroneCliInstallerImpl implements DroneCliInstaller {
     }
 
     if (toolExists) {
-      const avblVersionNumber = asVersionNumber(versionInfo.availableVersion);
-      const url = `https://github.com/harness/drone-cli/releases/download/${versionInfo.availableVersion}/drone_${os}_${arch}.tar.gz`;
-      const isUpgradeNeeded = semver.lt(
-        versionInfo.currentVersion,
-        avblVersionNumber
-      );
-      if (isUpgradeNeeded) {
-        const upgradeRequest = await vscode.window.showInformationMessage(
-          `${DRONE_CLI_COMMAND}  upgrade available to ${versionInfo.availableVersion}, currently on ${versionInfo.currentVersion}`,
-          'Install'
+      if (checkForDroneCliUpgrade()){
+        const avblVersionNumber = asVersionNumber(versionInfo.availableVersion);
+        const url = `https://github.com/harness/drone-cli/releases/download/${versionInfo.availableVersion}/drone_${os}_${arch}.tar.gz`;
+        const isUpgradeNeeded = semver.lt(
+          versionInfo.currentVersion,
+          avblVersionNumber
         );
-        if (upgradeRequest === 'Install') {
-          await this.installTool(url, avblVersionNumber);
+        if (isUpgradeNeeded) {
+          const upgradeRequest = await vscode.window.showInformationMessage(
+            `${DRONE_CLI_COMMAND}  upgrade available to ${versionInfo.availableVersion}, currently on ${versionInfo.currentVersion}`,
+            'Install'
+          );
+          if (upgradeRequest === 'Install') {
+            await this.installTool(url, avblVersionNumber);
+          }
         }
+        return {
+          succeeded: true,
+          result: toolLocation,
+        };
       }
-      return {
-        succeeded: true,
-        result: toolLocation,
-      };
     } else {
       const versionResult = await this.getStableDroneVersion();
       if (succeeded(versionResult)) {
