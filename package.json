@@ -78,6 +78,13 @@
         "configuration": "./drone-language-configuration.json"
       }
     ],
+    "grammars": [
+      {
+        "language": "drone",
+        "scopeName": "source.drone",
+        "path": "./syntaxes/YAML.tmLanguage"
+      }
+    ],
     "menus": {
       "editor/title": [
         {
