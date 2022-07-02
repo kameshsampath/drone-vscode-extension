@@ -20,7 +20,7 @@
     "Other",
     "Snippets"
   ],
-  "icon": "./images/drone-logo-png-dark-128.png",
+  "icon": "images/drone-logo-png-dark-128.png",
   "keywords": [
     "Pipelines",
     "Drone"
@@ -32,7 +32,7 @@
     "onLanguage:drone",
     "workspaceContains:**/.drone.yml"
   ],
-  "main": "./out/extension.js",
+  "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
@@ -204,17 +204,16 @@
     "vscode.git"
   ],
   "scripts": {
-    "vscode:prepublish": "npm run -S esbuild-base -- --minify",
-    "esbuild-base": "rimraf out && esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
     "clean": "rimraf out",
-    "compile": "tsc -p ./",
-    "esbuild": "npm run esbuild-base -- --sourcemap",
-    "build": "npm run esbuild && npm run compile",
-    "watch": "npm run compile && npm run -S build -- --sourcemap --watch",
-    "pretest": "npm run clean  && npm run build",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "test": "node ./out/test/runTests.js"
+    "compile": "webpack",
+    "compile-tests": "tsc -p . --outDir out",
+    "lint": "eslint src --ext ts",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "test": "node ./out/test/runTest.js",
+    "vscode:prepublish": "npm run clean && npm run package",
+    "watch": "webpack --watch",
+    "watch-tests": "tsc -p . -w --outDir out"
   },
   "devDependencies": {
     "@types/axios": "^0.14.0",
@@ -235,7 +234,6 @@
     "@typescript-eslint/eslint-plugin": "^5.29.0",
     "@typescript-eslint/parser": "^5.29.0",
     "@vscode/test-electron": "^2.1.3",
-    "esbuild": "^0.14.47",
     "eslint": "^8.18.0",
     "eslint-plugin-header": "^3.1.1",
     "glob": "^8.0.3",
