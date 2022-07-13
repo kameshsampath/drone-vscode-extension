@@ -41,3 +41,7 @@ This extension contributes the following settings:
 No release yet.
 
 **Enjoy!**
+
+## Disclaimer
+
+This is not an officially supported Harness product.
